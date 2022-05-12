@@ -8,8 +8,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "Sound/SoundCue.h"
-
-
+#include "Engine/SkeletalMeshSocket.h"
+#include "CharacterWeapon.h"
+#include "myData.h"
 // Sets default values
 AData_Cpp::AData_Cpp()
 {
@@ -23,6 +24,8 @@ AData_Cpp::AData_Cpp()
 	//Mesh
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(GetRootComponent());
+	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Skeletal"));
+	Weapon->SetupAttachment(GetRootComponent());	
 
 	//Particle
 	IdleParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Idle_Particule"));
@@ -36,6 +39,10 @@ AData_Cpp::AData_Cpp()
 
 	CurrentLocation = this->GetActorLocation();
 	SpeedToGo = 150.f;
+
+	//Get Data
+	DataToEnter = CreateDefaultSubobject<UmyData>(TEXT("Database"));
+	
 }
 
 // Called when the game starts or when spawned
@@ -63,6 +70,11 @@ void AData_Cpp::onOverlapBeggin(UPrimitiveComponent* OverlappedComponent, AActor
 {
 	UE_LOG(LogTemp, Warning, TEXT("Enter Collision"));
 	isTrigger = true;
+	DataToEnter->ApplyDammage(1);
+	if (DataToEnter->PV <= 0) {
+		DataToEnter->PV = 0;
+		Destroy();
+	}
 	if (OverlapParticle) {
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), OverlapParticle, GetActorLocation(), FRotator(.0f), true);
 	}
@@ -70,6 +82,13 @@ void AData_Cpp::onOverlapBeggin(UPrimitiveComponent* OverlappedComponent, AActor
 	if (OverlapSound) {
 		UGameplayStatics::PlaySound2D(this, OverlapSound, 2.75f);
 	}	
+	if (OtherActor) {
+
+		ACharacterWeapon* curChar = Cast<ACharacterWeapon>(OtherActor);
+		if (curChar) {
+			EquipWeapon(curChar);
+		}
+	}
 }
 
 void AData_Cpp::onOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -92,3 +111,19 @@ void AData_Cpp::MoveTo()
 	}
 }
 
+void AData_Cpp::EquipWeapon(class ACharacterWeapon* myChar) {
+
+	//Ignore collision de la cam
+	Weapon->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	Weapon->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+
+	Weapon->SetSimulatePhysics(false);
+
+	const USkeletalMeshSocket* weaponSocket = myChar->GetMesh()->GetSocketByName("WeaponSocket");
+
+	if (Weapon) {
+		if (weaponSocket) {
+			weaponSocket->AttachActor(this, myChar->GetMesh());
+		}
+	}
+}

@@ -37,7 +37,7 @@ public:
 	float SpeedToGo;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Items | RotateObject")
-		float deltaSeconds;
+	float deltaSeconds;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Items | Collision")
 	class USphereComponent* CollideSphere;
@@ -54,6 +54,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Items | Sounds")
 	class USoundCue* OverlapSound;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon | myWeapon")
+	class USkeletalMeshComponent* Weapon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Database | myData")
+	class UmyData* DataToEnter;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -69,4 +75,6 @@ public:
 
 	UFUNCTION()
 	void MoveTo();
+
+	void EquipWeapon(class ACharacterWeapon* myChar);
 };
